@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -86,4 +87,16 @@ func GenerateRandomString(length int) string {
 	str := b.String()
 
 	return str
+}
+
+// RunCMD runs shell command and returns output and error
+func RunCMD(command string, args ...string) (string, error) {
+	cmd := exec.Command(command, args...)
+
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		return "", err
+	}
+	return string(stdout), nil
 }
