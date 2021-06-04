@@ -15,9 +15,9 @@ This is a Golang tool for testing read and write functions in USB devices.
 ### CLI usage
 
 ```bash
-./usb-test --help // to get help
-./usb-test --sim-rw=4 // sets simultaneous number of read and write (default runtime.GOMAXPROCS(0))
-./usb-test --root-dir="/mnt/" // sets the mount directory for usb drives (default "/mnt/")
+./usb-test --help # to get help
+./usb-test --sim-rw=4 # sets simultaneous number of read and write (default runtime.GOMAXPROCS(0))
+./usb-test --root-dir="/mnt/" # sets the mount directory for usb drives (default "/mnt/")
 
 ./usb-test --sim-rw=4 --root-dir="/mnt/
 ```
