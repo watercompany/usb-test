@@ -12,9 +12,10 @@ func NewApp() *cli.App {
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.IntFlag{
-				Name:        "lang",
+				Name:        "sim",
 				Value:       runtime.GOMAXPROCS(0),
 				Usage:       "number of simultaneous read and write.",
+				Aliases:     []string{"s"},
 				Destination: &simReadWrite,
 			},
 		},
