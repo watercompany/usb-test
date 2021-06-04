@@ -28,7 +28,7 @@ var (
 	testErrors     = []PathError{}
 )
 
-func RunTest(ctx *cli.Context) error {
+func RunTest(ctx *cli.Context, numSimReadWrite int) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -65,7 +65,7 @@ func RunTest(ctx *cli.Context) error {
 	// write to files
 	log.Println("-------------------STAGE 1---------------------")
 	// log.Println("Creating files: ...")
-	writeDuration := writeToMounts(shaFiles, mountPoints, 5)
+	writeDuration := writeToMounts(shaFiles, mountPoints, numSimReadWrite)
 
 	// log.Println("Files created.")
 	log.Printf("Time taken to write: %s\n", writeDuration)
@@ -75,13 +75,15 @@ func RunTest(ctx *cli.Context) error {
 
 	// read from files
 	log.Println("-------------------STAGE 2---------------------")
-	readDuration := readFromMounts(shaFiles, mountPoints, 5)
+	readDuration := readFromMounts(shaFiles, mountPoints, numSimReadWrite)
 	readSpeed := float64(1000000000.0*byteSize) / float64(readDuration.Nanoseconds()*1024*1024)
 	log.Printf("Time taken to read: %s\n", readDuration)
 	log.Printf("Read speed: %f MB/s\n", readSpeed)
 	log.Println("----------------------------------------")
 
-	log.Printf("%+v", testErrors)
+	for _, testError := range testErrors {
+		fmt.Printf("Error: %s, %s, %+v", testError.Path, testError.Type, testError.Error)
+	}
 
 	return nil
 }
