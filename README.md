@@ -5,7 +5,7 @@ This is a Golang tool for testing read and write functions in USB devices.
 
 ## Table of Contents
    * [Running From Binary File](#Running-From-BinaryFile)
-      * [CLI Usage]
+      * [CLI Usage](#cli-usage)
    * [Installation](#installation)
       * [Compiling on Linux](#compiling-on-linux)
       * [Compiling on MacOS](#compiling-on-macos)
