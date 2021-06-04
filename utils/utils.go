@@ -2,10 +2,12 @@ package utils
 
 import (
 	"crypto/sha256"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -68,8 +70,6 @@ func CreateFile(fileName string, force bool) (string, error) {
 		}
 	}
 
-	log.Printf("File created: %s \n", fileName)
-
 	return fileName, nil
 }
 
@@ -106,4 +106,23 @@ func RunCMD(command string, args ...string) (string, error) {
 func NewSHA256(data []byte) []byte {
 	hash := sha256.Sum256(data)
 	return hash[:]
+}
+
+// ListDirectories returns slice of directories in a specific path
+func ListDirectories(path string) ([]string, error) {
+	var dirList []string
+	files, err := ioutil.ReadDir(path)
+
+	if err != nil {
+
+		return dirList, err
+	}
+
+	for _, f := range files {
+
+		if f.IsDir() {
+			dirList = append(dirList, filepath.Join(path, f.Name()))
+		}
+	}
+	return dirList, nil
 }
