@@ -4,12 +4,9 @@ import (
 	"crypto/sha256"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -71,23 +68,6 @@ func CreateFile(fileName string, force bool) (string, error) {
 	}
 
 	return fileName, nil
-}
-
-// GenerateRandomString is a helper func for generating
-// random string of the given input length
-// returns the generated string
-func GenerateRandomString(length int) string {
-	rand.Seed(time.Now().UnixNano())
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"abcdefghijklmnopqrstuvwxyz" +
-		"0123456789")
-	var b strings.Builder
-	for i := 0; i < length; i++ {
-		b.WriteRune(chars[rand.Intn(len(chars))])
-	}
-	str := b.String()
-
-	return str
 }
 
 // RunCMD runs shell command and returns output and error
