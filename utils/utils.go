@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/sha256"
 	"log"
 	"math/rand"
 	"os"
@@ -99,4 +100,10 @@ func RunCMD(command string, args ...string) (string, error) {
 		return "", err
 	}
 	return string(stdout), nil
+}
+
+// NewSHA256 generates sha256 hash
+func NewSHA256(data []byte) []byte {
+	hash := sha256.Sum256(data)
+	return hash[:]
 }
