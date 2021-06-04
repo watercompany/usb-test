@@ -4,31 +4,226 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"reflect"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/watercompany/usb-test/utils"
 )
 
+type PathError struct {
+	Path  string `json:"path"`
+	Type  string `json:"type"`
+	Error error  `json:"error"`
+}
+
 var (
-	n = 1024
+	byteSize       = 1024 * 1024
+	shaFileName    = fmt.Sprintf("%d-SHA256", byteSize/1024)
+	mediaDirectory = "/mnt/"
+	testErrors     = []PathError{}
 )
 
 func RunTest(ctx *cli.Context) error {
-
-	// if err := utils.CreateFolder(config.TestDir, config.ForceCreate); err != nil {
+	// lsblkJSON, err := ParseLsblk()
+	// if err != nil {
 	// 	return err
 	// }
 
-	token := make([]byte, n*1024)
-	rand.Read(token)
-	// fmt.Println(token)
-	lsblkJSON, err := ParseLsblk()
+	// var mountPoints []string
+	// var shaFiles [][]byte
+
+	// for _, device := range lsblkJSON.BlockDevices {
+	// 	log.Printf("%+v\n", device)
+	// 	// check if it is a usb device and if so get the mount points
+	// 	for _, child := range device.Children {
+	// 		mountPoints = append(mountPoints, child.Name)
+	// 		token := make([]byte, byteSize)
+	// 		rand.Read(token)
+	// 		shaFiles = append(shaFiles, token)
+	// 	}
+	// }
+
+	var shaFiles [][]byte
+	mountPoints, err := utils.ListDirectories(mediaDirectory)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", lsblkJSON)
+
+	n := len(mountPoints)
+
+	for i := 0; i < n; i++ {
+		token := make([]byte, byteSize)
+		rand.Read(token)
+		shaFiles = append(shaFiles, token)
+	}
+
+	// write to files
+	log.Println("-------------------STAGE 1---------------------")
+	// log.Println("Creating files: ...")
+	writeDuration := writeToMounts(shaFiles, mountPoints, 5)
+
+	// log.Println("Files created.")
+	log.Printf("Time taken to write: %s\n", writeDuration)
+	writeSpeed := float64(1000000000*byteSize) / float64(writeDuration.Nanoseconds()*1024*1024)
+	log.Printf("Write speed: %f MB/s\n", writeSpeed)
+	log.Println("----------------------------------------")
+
+	// read from files
+	log.Println("-------------------STAGE 2---------------------")
+	readDuration := readFromMounts(shaFiles, mountPoints, 5)
+	readSpeed := float64(1000000000.0*byteSize) / float64(readDuration.Nanoseconds()*1024*1024)
+	log.Printf("Time taken to read: %s\n", readDuration)
+	log.Printf("Read speed: %f MB/s\n", readSpeed)
+	log.Println("----------------------------------------")
+
+	log.Printf("%+v", testErrors)
 
 	return nil
+}
+
+func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *time.Duration {
+	// write file to path
+	start := time.Now()
+
+	numberOfFileJobs := len(mountPoints)
+	jobs := make(chan int, numberOfFileJobs)
+	results := make(chan int, numberOfFileJobs)
+
+	for w := 1; w <= numWorkers; w++ {
+		go func(id int, jobs <-chan int, results chan<- int) {
+			for j := range jobs {
+				// time.Sleep(time.Second)
+				// fmt.Println("worker", id, "finished job", j)
+				shaFile := shaFiles[j]
+				writePath := filepath.Join(mountPoints[j], shaFileName)
+				// fmt.Println(writePath)
+
+				createdFilePath, err := utils.CreateFile(writePath, true)
+				if err != nil {
+					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					continue
+				}
+				file, err := os.OpenFile(createdFilePath, os.O_RDWR, 0644)
+				if err != nil {
+					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					continue
+				}
+
+				// write shaFile to file
+				_, err = file.Write(shaFile)
+				if err != nil {
+					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					continue
+				}
+				file.Close()
+				results <- j
+			}
+		}(w, jobs, results)
+	}
+
+	for j := 0; j < numberOfFileJobs; j++ {
+		jobs <- j
+	}
+	close(jobs)
+
+	// get results
+	for a := 1; a <= numberOfFileJobs; a++ {
+		<-results
+	}
+
+	duration := time.Since(start)
+	return &duration
+}
+
+func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *time.Duration {
+	// write file to path
+	start := time.Now()
+
+	numberOfFileJobs := len(mountPoints)
+	jobs := make(chan int, numberOfFileJobs)
+	results := make(chan int, numberOfFileJobs)
+
+	for w := 1; w <= numWorkers; w++ {
+		go func(id int, jobs <-chan int, results chan<- int) {
+			for j := range jobs {
+				shaFile := shaFiles[j]
+				readPath := filepath.Join(mountPoints[j], shaFileName)
+
+				file, err := os.OpenFile(readPath, os.O_RDWR, 0644)
+				if err != nil {
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					continue
+				}
+
+				token := make([]byte, byteSize)
+				readByteLength, err := file.Read(token)
+				if err != nil {
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					continue
+				}
+
+				if readByteLength != byteSize {
+					err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, byteSize)
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+				}
+
+				if !reflect.DeepEqual(token, shaFile) {
+					err := errors.Errorf("file has a different content\n %x, \n%x\n", token, shaFile)
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+				}
+				file.Close()
+				fmt.Println("worker", id, "finished job", j)
+				results <- j
+			}
+		}(w, jobs, results)
+	}
+
+	for j := 0; j < numberOfFileJobs; j++ {
+		jobs <- j
+	}
+	close(jobs)
+
+	// get results
+	for a := 1; a <= numberOfFileJobs; a++ {
+		<-results
+	}
+
+	// for i, shaFile := range shaFiles {
+	// 	readPath := filepath.Join(mountPoints[i], shaFileName)
+
+	// 	file, err := os.OpenFile(readPath, os.O_RDWR, 0644)
+	// 	if err != nil {
+	// 		testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+	// 		continue
+	// 	}
+	// 	defer file.Close()
+
+	// 	token := make([]byte, byteSize)
+	// 	readByteLength, err := file.Read(token)
+	// 	if err != nil {
+	// 		testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+	// 		continue
+	// 	}
+
+	// 	if readByteLength != byteSize {
+	// 		err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, byteSize)
+	// 		testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+	// 	}
+
+	// 	if !reflect.DeepEqual(token, shaFile) {
+	// 		err := errors.Errorf("file has a different content\n %x, \n%x\n", token, shaFile)
+	// 		testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+	// 	}
+
+	// }
+
+	duration := time.Since(start)
+	return &duration
 }
 
 // {
