@@ -4,15 +4,23 @@ USB device testing
 This is a Golang tool for testing read and write functions in USB devices.
 
 ## Table of Contents
-   * [Running-From-Binary-File](#Running-From-BinaryFile)
+   * [Running From Binary File](#Running-From-BinaryFile)
+      * [CLI Usage]
    * [Installation](#installation)
       * [Compiling on Linux](#compiling-on-linux)
       * [Compiling on MacOS](#compiling-on-macos)
-      * [Compiling on Windows](#compiling-on-windows)
-   * [Resources and libraries](#libraries-used)
 
 ---
-##Running-From-Binary-File
+## Running From Binary File
+### CLI usage
+
+```bash
+./usb-test --help // to get help
+./usb-test --sim-rw=4 // sets simultaneous number of read and write (default runtime.GOMAXPROCS(0))
+./usb-test --root-dir="/mnt/" // sets the mount directory for usb drives (default "/mnt/")
+
+./usb-test --sim-rw=4 --root-dir="/mnt/
+```
 
 ## Installation
 usb-test is developed and tested on `go version go1.16.5 linux/amd64`
