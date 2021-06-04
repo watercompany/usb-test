@@ -21,6 +21,10 @@ type PathError struct {
 	Error error  `json:"error"`
 }
 
+const (
+	MB = 1024 * 1024
+)
+
 var (
 	byteSize       = 1024 * 1024
 	shaFileName    = fmt.Sprintf("%d-SHA256", byteSize/1024)
@@ -57,6 +61,7 @@ func RunTest(ctx *cli.Context, numSimReadWrite int) error {
 	n := len(mountPoints)
 
 	for i := 0; i < n; i++ {
+		mountPoints[i] = filepath.Join(mountPoints[i], shaFileName)
 		token := make([]byte, byteSize)
 		rand.Read(token)
 		shaFiles = append(shaFiles, token)
@@ -69,22 +74,48 @@ func RunTest(ctx *cli.Context, numSimReadWrite int) error {
 
 	// log.Println("Files created.")
 	log.Printf("Time taken to write: %s\n", writeDuration)
-	writeSpeed := float64(1000000000*byteSize) / float64(writeDuration.Nanoseconds()*1024*1024)
+	writeSpeed := float64(1000000000*byteSize) / float64(writeDuration.Nanoseconds()*MB)
 	log.Printf("Write speed: %f MB/s\n", writeSpeed)
-	log.Println("----------------------------------------")
+	log.Println("-----------------------------------------------")
 
 	// read from files
 	log.Println("-------------------STAGE 2---------------------")
 	readDuration := readFromMounts(shaFiles, mountPoints, numSimReadWrite)
-	readSpeed := float64(1000000000.0*byteSize) / float64(readDuration.Nanoseconds()*1024*1024)
+	readSpeed := float64(1000000000.0*byteSize) / float64(readDuration.Nanoseconds()*MB)
 	log.Printf("Time taken to read: %s\n", readDuration)
 	log.Printf("Read speed: %f MB/s\n", readSpeed)
-	log.Println("----------------------------------------")
+	log.Println("-----------------------------------------------")
 
-	for _, testError := range testErrors {
-		fmt.Printf("Error: %s, %s, %+v", testError.Path, testError.Type, testError.Error)
+	log.Println("-------------------Summary---------------------")
+	log.Printf("Number of files: %d", n)
+	log.Printf("Size of each file: %f MB", float64(byteSize)/MB)
+	log.Println("-----------------------------------------------")
+
+	// clean up files
+	for _, mountPoint := range mountPoints {
+		err = deleteFile(mountPoint)
+		if err != nil {
+			// log.Println("Unable to delete: ", mountPoint)
+			testErrors = append(testErrors, PathError{Path: mountPoint, Error: err, Type: "delete"})
+		}
 	}
 
+	if len(testErrors) > 0 {
+		log.Println("-------------------Errors---------------------")
+		for _, testError := range testErrors {
+			fmt.Printf("Error: %s, %s, %+v", testError.Path, testError.Type, testError.Error)
+		}
+		log.Println("-----------------------------------------------")
+	}
+
+	return nil
+}
+
+func deleteFile(path string) error {
+	err := os.Remove(path) // remove a single file
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -102,7 +133,7 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 				// time.Sleep(time.Second)
 				// fmt.Println("worker", id, "finished job", j)
 				shaFile := shaFiles[j]
-				writePath := filepath.Join(mountPoints[j], shaFileName)
+				writePath := mountPoints[j]
 				// fmt.Println(writePath)
 
 				createdFilePath, err := utils.CreateFile(writePath, true)
@@ -154,7 +185,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 		go func(id int, jobs <-chan int, results chan<- int) {
 			for j := range jobs {
 				shaFile := shaFiles[j]
-				readPath := filepath.Join(mountPoints[j], shaFileName)
+				readPath := mountPoints[j]
 
 				file, err := os.OpenFile(readPath, os.O_RDWR, 0644)
 				if err != nil {
