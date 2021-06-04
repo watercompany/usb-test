@@ -179,7 +179,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
 				}
 				file.Close()
-				fmt.Println("worker", id, "finished job", j)
+				// fmt.Println("worker", id, "finished job", j)
 				results <- j
 			}
 		}(w, jobs, results)
