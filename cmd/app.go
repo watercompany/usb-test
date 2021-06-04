@@ -20,8 +20,10 @@ func NewApp() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			cli.ShowSubcommandHelp(c)
-			return nil
+			// cli.ShowSubcommandHelp(c)
+			fmt.Println("running test ...") //c.Args().First())
+			return RunTest(c)
+			// return nil
 		},
 	}
 	return app
