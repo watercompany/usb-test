@@ -2,28 +2,25 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/urfave/cli/v2"
 )
 
 func NewApp() *cli.App {
+	var simReadWrite int
 	app := &cli.App{
-		Commands: []*cli.Command{
-			{
-				Name:    "run",
-				Aliases: []string{"a"},
-				Usage:   "run usb read write tests",
-				Action: func(c *cli.Context) error {
-					fmt.Println("running test ...") //c.Args().First())
-					return RunTest(c)
-				},
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:        "lang",
+				Value:       runtime.GOMAXPROCS(0),
+				Usage:       "number of simultaneous read and write.",
+				Destination: &simReadWrite,
 			},
 		},
 		Action: func(c *cli.Context) error {
-			// cli.ShowSubcommandHelp(c)
-			fmt.Println("running test ...") //c.Args().First())
-			return RunTest(c)
-			// return nil
+			fmt.Println("running test ...")
+			return RunTest(c, simReadWrite)
 		},
 	}
 	return app
