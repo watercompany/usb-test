@@ -1,11 +1,12 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
-	"strings"
-	"time"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 )
@@ -66,24 +67,42 @@ func CreateFile(fileName string, force bool) (string, error) {
 		}
 	}
 
-	log.Printf("File created: %s \n", fileName)
-
 	return fileName, nil
 }
 
-// GenerateRandomString is a helper func for generating
-// random string of the given input length
-// returns the generated string
-func GenerateRandomString(length int) string {
-	rand.Seed(time.Now().UnixNano())
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"abcdefghijklmnopqrstuvwxyz" +
-		"0123456789")
-	var b strings.Builder
-	for i := 0; i < length; i++ {
-		b.WriteRune(chars[rand.Intn(len(chars))])
-	}
-	str := b.String()
+// RunCMD runs shell command and returns output and error
+func RunCMD(command string, args ...string) (string, error) {
+	cmd := exec.Command(command, args...)
 
-	return str
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		return "", err
+	}
+	return string(stdout), nil
+}
+
+// NewSHA256 generates sha256 hash
+func NewSHA256(data []byte) []byte {
+	hash := sha256.Sum256(data)
+	return hash[:]
+}
+
+// ListDirectories returns slice of directories in a specific path
+func ListDirectories(path string) ([]string, error) {
+	var dirList []string
+	files, err := ioutil.ReadDir(path)
+
+	if err != nil {
+
+		return dirList, err
+	}
+
+	for _, f := range files {
+
+		if f.IsDir() {
+			dirList = append(dirList, filepath.Join(path, f.Name()))
+		}
+	}
+	return dirList, nil
 }
