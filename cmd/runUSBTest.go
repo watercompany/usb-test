@@ -26,13 +26,12 @@ const (
 )
 
 var (
-	byteSize       = 1024 * 1024
-	shaFileName    = fmt.Sprintf("%d-SHA256", byteSize/1024)
-	mediaDirectory = "/mnt/"
-	testErrors     = []PathError{}
+	byteSize    = 1024 * 1024
+	shaFileName = fmt.Sprintf("%d-SHA256", byteSize/1024)
+	testErrors  = []PathError{}
 )
 
-func RunTest(ctx *cli.Context, numSimReadWrite int) error {
+func RunTest(ctx *cli.Context, numSimReadWrite int, mediaDirectory string) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
