@@ -28,7 +28,7 @@ func NewApp() *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			fmt.Println("running test ...")
+			fmt.Println("running test...")
 			return RunTest(c, simReadWrite, mediaDirectory)
 		},
 	}
