@@ -90,7 +90,7 @@ brew install --cask sublime-text
 Run the program.
 ```bash
 git clone clone https://github.com/watercompany/usb-test.git
-cd cx-game
+cd usb-test
 go mod download
 go run main.go
 ```
