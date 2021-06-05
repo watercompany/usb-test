@@ -14,6 +14,8 @@ This is a Golang tool for testing read and write functions in USB devices.
 ## Running From Binary File
 ### CLI usage
 
+Download `usb-test` binary from release pages
+
 ```bash
 ./usb-test --help # to get help
 ./usb-test --sim-rw=4 # sets simultaneous number of read and write (default runtime.GOMAXPROCS(0))
