@@ -18,10 +18,11 @@ Download `usb-test` binary from release pages
 
 ```bash
 ./usb-test --help # to get help
-./usb-test --sim-rw=4 # sets simultaneous number of read and write (default runtime.GOMAXPROCS(0))
-./usb-test --root-dir="/mnt/" # sets the mount directory for usb drives (default "/mnt/")
+./usb-test --sim-r=4 # sets simultaneous number of read (default runtime.GOMAXPROCS(0)) - alias(r)
+./usb-test --sim-w=4 # sets simultaneous number of write (default runtime.GOMAXPROCS(0)) - alias(w)
+./usb-test --root-dir="/mnt/" # sets the mount directory for usb drives (default "/mnt/") - alias(d)
 
-./usb-test --sim-rw=4 --root-dir="/mnt/
+./usb-test --sim-r=4 --sim-w=4 --root-dir="/mnt/
 ```
 
 ## Installation
