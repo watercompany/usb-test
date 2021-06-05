@@ -61,8 +61,7 @@ cd usb-test
 go mod download
 go run main.go
 ```
-A window should appear, with a cat use `a`, `s`, `d`, `w` to move the cat around.\
-\
+
 Open source code in editor
 ```!bash
 cd usb-test
@@ -95,8 +94,7 @@ cd cx-game
 go mod download
 go run main.go
 ```
-A window should appear, with a cat use `a`, `s`, `d`, `w` to move the cat around.\
-\
+
 Open source code in editor
 ```!bash
 cd usb-test
