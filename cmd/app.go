@@ -18,14 +18,14 @@ func NewApp() *cli.App {
 				Value:       runtime.GOMAXPROCS(0),
 				Usage:       "number of simultaneous write.",
 				Aliases:     []string{"r"},
-				Destination: &simWrite,
+				Destination: &simRead,
 			},
 			&cli.IntFlag{
 				Name:        "sim-w",
 				Value:       runtime.GOMAXPROCS(0),
 				Usage:       "number of simultaneous read.",
 				Aliases:     []string{"w"},
-				Destination: &simRead,
+				Destination: &simWrite,
 			},
 			&cli.StringFlag{
 				Name:        "root-dir",
