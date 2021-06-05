@@ -31,7 +31,7 @@ var (
 	testErrors  = []PathError{}
 )
 
-func RunTest(ctx *cli.Context, numSimReadWrite int, mediaDirectory string) error {
+func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory string) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -69,7 +69,7 @@ func RunTest(ctx *cli.Context, numSimReadWrite int, mediaDirectory string) error
 	// write to files
 	log.Println("-------------------STAGE 1---------------------")
 	// log.Println("Creating files: ...")
-	writeDuration := writeToMounts(shaFiles, mountPoints, numSimReadWrite)
+	writeDuration := writeToMounts(shaFiles, mountPoints, numSimWrite)
 
 	// log.Println("Files created.")
 	log.Printf("Time taken to write: %s\n", writeDuration)
@@ -79,7 +79,7 @@ func RunTest(ctx *cli.Context, numSimReadWrite int, mediaDirectory string) error
 
 	// read from files
 	log.Println("-------------------STAGE 2---------------------")
-	readDuration := readFromMounts(shaFiles, mountPoints, numSimReadWrite)
+	readDuration := readFromMounts(shaFiles, mountPoints, numSimRead)
 	readSpeed := float64(1000000000.0*byteSize) / float64(readDuration.Nanoseconds()*MB)
 	log.Printf("Time taken to read: %s\n", readDuration)
 	log.Printf("Read speed: %f MB/s\n", readSpeed)
