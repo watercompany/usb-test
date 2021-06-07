@@ -138,11 +138,13 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 				createdFilePath, err := utils.CreateFile(writePath, true)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					results <- j
 					continue
 				}
 				file, err := os.OpenFile(createdFilePath, os.O_RDWR, 0644)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					results <- j
 					continue
 				}
 
@@ -150,6 +152,7 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 				_, err = file.Write(shaFile)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					results <- j
 					continue
 				}
 				file.Close()
@@ -189,6 +192,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 				file, err := os.OpenFile(readPath, os.O_RDWR, 0644)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					results <- j
 					continue
 				}
 
@@ -196,6 +200,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 				readByteLength, err := file.Read(token)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					results <- j
 					continue
 				}
 
