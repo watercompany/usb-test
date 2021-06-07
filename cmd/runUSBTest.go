@@ -66,6 +66,14 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 		shaFiles = append(shaFiles, token)
 	}
 
+	// delete before running
+	for _, mountPoint := range mountPoints {
+		err = deleteFile(mountPoint)
+		if err != nil {
+			continue
+		}
+	}
+
 	// write to files
 	log.Println("-------------------STAGE 1---------------------")
 	// log.Println("Creating files: ...")
@@ -102,7 +110,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 	if len(testErrors) > 0 {
 		log.Println("-------------------Errors---------------------")
 		for _, testError := range testErrors {
-			fmt.Printf("Error: %s, %s, %+v", testError.Path, testError.Type, testError.Error)
+			fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s \n", testError.Path, testError.Type, testError.Error)
 		}
 		log.Println("-----------------------------------------------")
 	}
@@ -138,11 +146,13 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 				createdFilePath, err := utils.CreateFile(writePath, true)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					results <- j
 					continue
 				}
 				file, err := os.OpenFile(createdFilePath, os.O_RDWR, 0644)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					results <- j
 					continue
 				}
 
@@ -150,6 +160,7 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 				_, err = file.Write(shaFile)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					results <- j
 					continue
 				}
 				file.Close()
@@ -189,6 +200,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 				file, err := os.OpenFile(readPath, os.O_RDWR, 0644)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					results <- j
 					continue
 				}
 
@@ -196,6 +208,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 				readByteLength, err := file.Read(token)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					results <- j
 					continue
 				}
 

@@ -45,7 +45,7 @@ func CreateFile(fileName string, force bool) (string, error) {
 	if force {
 		var file, err = os.Create(fileName)
 		if err != nil {
-			log.Println("Error creating file")
+			// log.Printf("Error creating file: %+v\n", err)
 			return "", errors.Errorf("Failed to create file: %v \n", err)
 		}
 		defer file.Close()
@@ -57,7 +57,7 @@ func CreateFile(fileName string, force bool) (string, error) {
 		if os.IsNotExist(err) {
 			var file, err = os.Create(fileName)
 			if err != nil {
-				log.Println("Error creating file")
+				// log.Println("Error creating file")
 				return "", errors.Errorf("Failed to create file: %v \n", err)
 			}
 			defer file.Close()
