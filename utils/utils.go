@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 
 	"github.com/pkg/errors"
 )
@@ -89,7 +90,7 @@ func NewSHA256(data []byte) []byte {
 }
 
 // ListDirectories returns slice of directories in a specific path
-func ListDirectories(path string) ([]string, error) {
+func ListDirectories(path string, sortDirectories bool) ([]string, error) {
 	var dirList []string
 	files, err := ioutil.ReadDir(path)
 
@@ -104,5 +105,9 @@ func ListDirectories(path string) ([]string, error) {
 			dirList = append(dirList, filepath.Join(path, f.Name()))
 		}
 	}
+	if sortDirectories {
+		sort.Strings(dirList)
+	}
+
 	return dirList, nil
 }

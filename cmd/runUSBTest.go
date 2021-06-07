@@ -32,7 +32,7 @@ var (
 	totalFileSize int
 )
 
-func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, mediaDirectory string) error {
+func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDirectories bool, mediaDirectory string) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -55,7 +55,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, mediaD
 	totalFileSize = byteSize * fileSize
 	shaFileName = fmt.Sprintf("%d-SHA256", totalFileSize/byteSize)
 	var shaFiles [][]byte
-	mountPoints, err := utils.ListDirectories(mediaDirectory)
+	mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
 	if err != nil {
 		return err
 	}
@@ -216,12 +216,12 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 				}
 
 				if readByteLength != totalFileSize {
-					err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, totalFileSize)
+					err := errors.Errorf("length of file and token not equal: Expected: %d\tFileSize%d\n", totalFileSize, readByteLength)
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
 				}
 
 				if !reflect.DeepEqual(token, shaFile) {
-					err := errors.Errorf("file has a different content\n %x, \n%x\n", token, shaFile)
+					err := errors.Errorf("file has a different content.")
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
 				}
 				file.Close()

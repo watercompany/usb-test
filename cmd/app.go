@@ -12,6 +12,7 @@ func NewApp() *cli.App {
 	var simWrite int
 	var mediaDirectory string
 	var fileSize int
+	var sortDirectories bool
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.IntFlag{
@@ -42,10 +43,17 @@ func NewApp() *cli.App {
 				Aliases:     []string{"d"},
 				Destination: &mediaDirectory,
 			},
+			&cli.BoolFlag{
+				Name:        "sort-directories",
+				Value:       false,
+				Usage:       "sort directories by name.",
+				Aliases:     []string{"n"},
+				Destination: &sortDirectories,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			fmt.Println("running test ...")
-			return RunTest(c, simRead, simWrite, fileSize, mediaDirectory)
+			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, mediaDirectory)
 		},
 	}
 	return app
