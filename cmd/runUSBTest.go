@@ -26,12 +26,13 @@ const (
 )
 
 var (
-	byteSize    = 1024 * 1024
-	shaFileName = fmt.Sprintf("%d-SHA256", byteSize/1024)
-	testErrors  = []PathError{}
+	byteSize      = 1024
+	shaFileName   string
+	testErrors    = []PathError{}
+	totalFileSize int
 )
 
-func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory string) error {
+func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, mediaDirectory string) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -51,6 +52,8 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 	// 	}
 	// }
 
+	totalFileSize = byteSize * fileSize
+	shaFileName = fmt.Sprintf("%d-SHA256", totalFileSize/byteSize)
 	var shaFiles [][]byte
 	mountPoints, err := utils.ListDirectories(mediaDirectory)
 	if err != nil {
@@ -61,7 +64,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 
 	for i := 0; i < n; i++ {
 		mountPoints[i] = filepath.Join(mountPoints[i], shaFileName)
-		token := make([]byte, byteSize)
+		token := make([]byte, totalFileSize)
 		rand.Read(token)
 		shaFiles = append(shaFiles, token)
 	}
@@ -81,21 +84,21 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 
 	// log.Println("Files created.")
 	log.Printf("Time taken to write: %s\n", writeDuration)
-	writeSpeed := float64(1000000000*byteSize) / float64(writeDuration.Nanoseconds()*MB)
+	writeSpeed := float64(1000000000*totalFileSize) / float64(writeDuration.Nanoseconds()*MB) * float64(n)
 	log.Printf("Write speed: %f MB/s\n", writeSpeed)
 	log.Println("-----------------------------------------------")
 
 	// read from files
 	log.Println("-------------------STAGE 2---------------------")
 	readDuration := readFromMounts(shaFiles, mountPoints, numSimRead)
-	readSpeed := float64(1000000000.0*byteSize) / float64(readDuration.Nanoseconds()*MB)
+	readSpeed := float64(1000000000.0*totalFileSize) / float64(readDuration.Nanoseconds()*MB) * float64(n)
 	log.Printf("Time taken to read: %s\n", readDuration)
 	log.Printf("Read speed: %f MB/s\n", readSpeed)
 	log.Println("-----------------------------------------------")
 
 	log.Println("-------------------Summary---------------------")
 	log.Printf("Number of files: %d", n)
-	log.Printf("Size of each file: %f MB", float64(byteSize)/MB)
+	log.Printf("Size of each file: %f MB", float64(totalFileSize)/MB)
 	log.Println("-----------------------------------------------")
 
 	// clean up files
@@ -204,7 +207,7 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 					continue
 				}
 
-				token := make([]byte, byteSize)
+				token := make([]byte, totalFileSize)
 				readByteLength, err := file.Read(token)
 				if err != nil {
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
@@ -212,8 +215,8 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 					continue
 				}
 
-				if readByteLength != byteSize {
-					err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, byteSize)
+				if readByteLength != totalFileSize {
+					err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, totalFileSize)
 					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
 				}
 
@@ -248,15 +251,15 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 	// 	}
 	// 	defer file.Close()
 
-	// 	token := make([]byte, byteSize)
+	// 	token := make([]byte, totalFileSize)
 	// 	readByteLength, err := file.Read(token)
 	// 	if err != nil {
 	// 		testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
 	// 		continue
 	// 	}
 
-	// 	if readByteLength != byteSize {
-	// 		err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, byteSize)
+	// 	if readByteLength != totalFileSize {
+	// 		err := errors.Errorf("length of file and token not equal %d, %d\n", readByteLength, totalFileSize)
 	// 		testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
 	// 	}
 
