@@ -32,7 +32,7 @@ var (
 	totalFileSize int
 )
 
-func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, mediaDirectory string) error {
+func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDirectories bool, mediaDirectory string) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -55,7 +55,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, mediaD
 	totalFileSize = byteSize * fileSize
 	shaFileName = fmt.Sprintf("%d-SHA256", totalFileSize/byteSize)
 	var shaFiles [][]byte
-	mountPoints, err := utils.ListDirectories(mediaDirectory)
+	mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
 	if err != nil {
 		return err
 	}

@@ -53,7 +53,7 @@ func NewApp() *cli.App {
 		},
 		Action: func(c *cli.Context) error {
 			fmt.Println("running test ...")
-			return RunTest(c, simRead, simWrite, fileSize, mediaDirectory)
+			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, mediaDirectory)
 		},
 	}
 	return app
