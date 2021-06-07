@@ -11,6 +11,7 @@ func NewApp() *cli.App {
 	var simRead int
 	var simWrite int
 	var mediaDirectory string
+	var fileSize int
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.IntFlag{
@@ -27,6 +28,13 @@ func NewApp() *cli.App {
 				Aliases:     []string{"w"},
 				Destination: &simWrite,
 			},
+			&cli.IntFlag{
+				Name:        "size",
+				Value:       1024,
+				Usage:       "total file size.",
+				Aliases:     []string{"s"},
+				Destination: &fileSize,
+			},
 			&cli.StringFlag{
 				Name:        "root-dir",
 				Value:       "/mnt/",
@@ -37,7 +45,7 @@ func NewApp() *cli.App {
 		},
 		Action: func(c *cli.Context) error {
 			fmt.Println("running test ...")
-			return RunTest(c, simRead, simWrite, mediaDirectory)
+			return RunTest(c, simRead, simWrite, fileSize, mediaDirectory)
 		},
 	}
 	return app
