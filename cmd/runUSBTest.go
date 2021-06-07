@@ -66,6 +66,14 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 		shaFiles = append(shaFiles, token)
 	}
 
+	// delete before running
+	for _, mountPoint := range mountPoints {
+		err = deleteFile(mountPoint)
+		if err != nil {
+			continue
+		}
+	}
+
 	// write to files
 	log.Println("-------------------STAGE 1---------------------")
 	// log.Println("Creating files: ...")
@@ -102,7 +110,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, mediaDirectory strin
 	if len(testErrors) > 0 {
 		log.Println("-------------------Errors---------------------")
 		for _, testError := range testErrors {
-			fmt.Printf("Error: %s, %s, %+v", testError.Path, testError.Type, testError.Error)
+			fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s \n", testError.Path, testError.Type, testError.Error)
 		}
 		log.Println("-----------------------------------------------")
 	}
