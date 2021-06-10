@@ -11,7 +11,7 @@ This is a Golang tool for testing read and write functions in USB devices.
       * [Compiling on MacOS](#compiling-on-macos)
 
 ---
-## Running From Binary File
+## Running From Source Code
 ### CLI usage
 
 Download `usb-test` binary from release pages
