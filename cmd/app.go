@@ -13,6 +13,7 @@ func NewApp() *cli.App {
 	var mediaDirectory string
 	var fileSize int
 	var sortDirectories bool
+	var timeout float64
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.IntFlag{
@@ -28,6 +29,13 @@ func NewApp() *cli.App {
 				Usage:       "number of simultaneous read.",
 				Aliases:     []string{"w"},
 				Destination: &simWrite,
+			},
+			&cli.Float64Flag{
+				Name:        "timeout",
+				Value:       3600.0,
+				Usage:       "loop timeout.",
+				Aliases:     []string{"t"},
+				Destination: &timeout,
 			},
 			&cli.IntFlag{
 				Name:        "size",
@@ -53,7 +61,7 @@ func NewApp() *cli.App {
 		},
 		Action: func(c *cli.Context) error {
 			fmt.Println("running test ...")
-			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, mediaDirectory)
+			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, timeout, mediaDirectory)
 		},
 	}
 	return app
