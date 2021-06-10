@@ -32,7 +32,7 @@ var (
 	totalFileSize int
 )
 
-func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDirectories bool, mediaDirectory string) error {
+func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDirectories bool, timeout float64, mediaDirectory string) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -55,67 +55,72 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 	totalFileSize = byteSize * fileSize
 	shaFileName = fmt.Sprintf("%d-SHA256", totalFileSize/byteSize)
 	var shaFiles [][]byte
-	mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
-	if err != nil {
-		return err
-	}
 
-	n := len(mountPoints)
+	start := time.Now()
 
-	for i := 0; i < n; i++ {
-		mountPoints[i] = filepath.Join(mountPoints[i], shaFileName)
-		token := make([]byte, totalFileSize)
-		rand.Read(token)
-		shaFiles = append(shaFiles, token)
-	}
-
-	// delete before running
-	for _, mountPoint := range mountPoints {
-		err = deleteFile(mountPoint)
+	for time.Since(start).Seconds() < timeout {
+		mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
 		if err != nil {
-			continue
+			return err
 		}
-	}
 
-	// write to files
-	log.Println("-------------------STAGE 1---------------------")
-	// log.Println("Creating files: ...")
-	writeDuration := writeToMounts(shaFiles, mountPoints, numSimWrite)
+		n := len(mountPoints)
 
-	// log.Println("Files created.")
-	log.Printf("Time taken to write: %s\n", writeDuration)
-	writeSpeed := float64(1000000000*totalFileSize) / float64(writeDuration.Nanoseconds()*MB) * float64(n)
-	log.Printf("Write speed: %f MB/s\n", writeSpeed)
-	log.Println("-----------------------------------------------")
-
-	// read from files
-	log.Println("-------------------STAGE 2---------------------")
-	readDuration := readFromMounts(shaFiles, mountPoints, numSimRead)
-	readSpeed := float64(1000000000.0*totalFileSize) / float64(readDuration.Nanoseconds()*MB) * float64(n)
-	log.Printf("Time taken to read: %s\n", readDuration)
-	log.Printf("Read speed: %f MB/s\n", readSpeed)
-	log.Println("-----------------------------------------------")
-
-	log.Println("-------------------Summary---------------------")
-	log.Printf("Number of files: %d", n)
-	log.Printf("Size of each file: %f MB", float64(totalFileSize)/MB)
-	log.Println("-----------------------------------------------")
-
-	// clean up files
-	for _, mountPoint := range mountPoints {
-		err = deleteFile(mountPoint)
-		if err != nil {
-			// log.Println("Unable to delete: ", mountPoint)
-			testErrors = append(testErrors, PathError{Path: mountPoint, Error: err, Type: "delete"})
+		for i := 0; i < n; i++ {
+			mountPoints[i] = filepath.Join(mountPoints[i], shaFileName)
+			token := make([]byte, totalFileSize)
+			rand.Read(token)
+			shaFiles = append(shaFiles, token)
 		}
-	}
 
-	if len(testErrors) > 0 {
-		log.Println("-------------------Errors---------------------")
-		for _, testError := range testErrors {
-			fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s \n", testError.Path, testError.Type, testError.Error)
+		// delete before running
+		for _, mountPoint := range mountPoints {
+			err = deleteFile(mountPoint)
+			if err != nil {
+				continue
+			}
 		}
+
+		// write to files
+		log.Println("-------------------STAGE 1---------------------")
+		// log.Println("Creating files: ...")
+		writeDuration := writeToMounts(shaFiles, mountPoints, numSimWrite)
+
+		// log.Println("Files created.")
+		log.Printf("Time taken to write: %s\n", writeDuration)
+		writeSpeed := float64(1000000000*totalFileSize) / float64(writeDuration.Nanoseconds()*MB) * float64(n)
+		log.Printf("Write speed: %f MB/s\n", writeSpeed)
 		log.Println("-----------------------------------------------")
+
+		// read from files
+		log.Println("-------------------STAGE 2---------------------")
+		readDuration := readFromMounts(shaFiles, mountPoints, numSimRead)
+		readSpeed := float64(1000000000.0*totalFileSize) / float64(readDuration.Nanoseconds()*MB) * float64(n)
+		log.Printf("Time taken to read: %s\n", readDuration)
+		log.Printf("Read speed: %f MB/s\n", readSpeed)
+		log.Println("-----------------------------------------------")
+
+		log.Println("-------------------Summary---------------------")
+		log.Printf("Number of files: %d", n)
+		log.Printf("Size of each file: %f MB", float64(totalFileSize)/MB)
+		log.Println("-----------------------------------------------")
+
+		// clean up files
+		for _, mountPoint := range mountPoints {
+			err = deleteFile(mountPoint)
+			if err != nil {
+				// log.Println("Unable to delete: ", mountPoint)
+				testErrors = append(testErrors, PathError{Path: mountPoint, Error: err, Type: "delete"})
+			}
+		}
+
+		if len(testErrors) > 0 {
+			log.Println("-------------------Errors---------------------")
+			for _, testError := range testErrors {
+				fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s \n", testError.Path, testError.Type, testError.Error)
+			}
+			log.Println("-----------------------------------------------")
+		}
 	}
 
 	return nil
