@@ -115,7 +115,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 		}
 
 		if len(testErrors) > 0 {
-			log.Println("-------------------Errors---------------------")
+			log.Printf("-------------------%d Errors---------------------\n", len(testErrors))
 			for _, testError := range testErrors {
 				fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s \n", testError.Path, testError.Type, testError.Error)
 			}
