@@ -17,12 +17,23 @@ This is a Golang tool for testing read and write functions in USB devices.
 Download `usb-test` binary from release pages
 
 ```bash
-./usb-test --help # to get help
-./usb-test --sim-r=4 # sets simultaneous number of read (default runtime.GOMAXPROCS(0)) - alias(r)
-./usb-test --sim-w=4 # sets simultaneous number of write (default runtime.GOMAXPROCS(0)) - alias(w)
-./usb-test --root-dir="/mnt/" # sets the mount directory for usb drives (default "/mnt/") - alias(d)
+go run main.go --help # to get help
+go run main.go --sim-r=4 # sets simultaneous number of read (default runtime.GOMAXPROCS(0)) - alias(r)
+go run main.go --sim-w=4 # sets simultaneous number of write (default runtime.GOMAXPROCS(0)) - alias(w)
+go run main.go --root-dir="/mnt/" # sets the mount directory for usb drives (default "/mnt/") - alias(d)
 
 ./usb-test --sim-r=4 --sim-w=4 --root-dir="/mnt/
+```
+
+```bash
+GLOBAL OPTIONS:
+   --sim-r value, -r value     number of simultaneous write. (default: 8)
+   --sim-w value, -w value     number of simultaneous read. (default: 8)
+   --timeout value, -t value   loop timeout. (default: 3600)
+   --size value, -s value      total file size. (default: 1024)
+   --root-dir value, -d value  media root directory to perform test on. (default: "/mnt/")
+   --sort-directories, -n      sort directories by name. (default: false)
+   --help, -h                  show help (default: false)
 ```
 
 ## Installation
