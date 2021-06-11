@@ -7,17 +7,24 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// RunTestFlags is a configuration struct for RunTest command
+type RunTestFlags struct {
+	NumSimRead      int
+	NumSimWrite     int
+	FileSize        int
+	SortDirectories bool
+	Timeout         float64
+	LoopCount       int
+	MediaDirectory  string
+}
+
+func NewConfig() *RunTestFlags {
+	return &RunTestFlags{}
+}
+
 func NewApp() *cli.App {
-	// config := config.NewConfig()
-	var (
-		simRead         int
-		simWrite        int
-		mediaDirectory  string
-		fileSize        int
-		sortDirectories bool
-		// timeout         float64
-		loopCount int
-	)
+	config := NewConfig()
+
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.IntFlag{
@@ -25,14 +32,14 @@ func NewApp() *cli.App {
 				Value:       runtime.GOMAXPROCS(0),
 				Usage:       "number of simultaneous write.",
 				Aliases:     []string{"r"},
-				Destination: &simRead,
+				Destination: &config.NumSimRead,
 			},
 			&cli.IntFlag{
 				Name:        "sim-w",
 				Value:       runtime.GOMAXPROCS(0),
 				Usage:       "number of simultaneous read.",
 				Aliases:     []string{"w"},
-				Destination: &simWrite,
+				Destination: &config.NumSimWrite,
 			},
 			// &cli.Float64Flag{
 			// 	Name:        "timeout",
@@ -46,33 +53,33 @@ func NewApp() *cli.App {
 				Value:       1024,
 				Usage:       "total file size.",
 				Aliases:     []string{"s"},
-				Destination: &fileSize,
+				Destination: &config.FileSize,
 			},
 			&cli.IntFlag{
 				Name:        "loop-count",
 				Value:       1,
 				Usage:       "total testing loop count.",
 				Aliases:     []string{"l"},
-				Destination: &loopCount,
+				Destination: &config.LoopCount,
 			},
 			&cli.StringFlag{
 				Name:        "root-dir",
 				Value:       "/mnt/",
 				Usage:       "media root directory to perform test on.",
 				Aliases:     []string{"d"},
-				Destination: &mediaDirectory,
+				Destination: &config.MediaDirectory,
 			},
 			&cli.BoolFlag{
 				Name:        "sort-directories",
 				Value:       false,
 				Usage:       "sort directories by name.",
 				Aliases:     []string{"n"},
-				Destination: &sortDirectories,
+				Destination: &config.SortDirectories,
 			},
 		},
 		Action: func(c *cli.Context) error {
 			fmt.Println("running test ...")
-			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, loopCount, mediaDirectory)
+			return RunTest(c, config)
 		},
 	}
 	return app
