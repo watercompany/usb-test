@@ -8,12 +8,16 @@ import (
 )
 
 func NewApp() *cli.App {
-	var simRead int
-	var simWrite int
-	var mediaDirectory string
-	var fileSize int
-	var sortDirectories bool
-	var timeout float64
+	// config := config.NewConfig()
+	var (
+		simRead         int
+		simWrite        int
+		mediaDirectory  string
+		fileSize        int
+		sortDirectories bool
+		// timeout         float64
+		loopCount int
+	)
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.IntFlag{
@@ -30,19 +34,26 @@ func NewApp() *cli.App {
 				Aliases:     []string{"w"},
 				Destination: &simWrite,
 			},
-			&cli.Float64Flag{
-				Name:        "timeout",
-				Value:       3600.0,
-				Usage:       "loop timeout.",
-				Aliases:     []string{"t"},
-				Destination: &timeout,
-			},
+			// &cli.Float64Flag{
+			// 	Name:        "timeout",
+			// 	Value:       3600.0,
+			// 	Usage:       "loop timeout.",
+			// 	Aliases:     []string{"t"},
+			// 	Destination: &timeout,
+			// },
 			&cli.IntFlag{
 				Name:        "size",
 				Value:       1024,
 				Usage:       "total file size.",
 				Aliases:     []string{"s"},
 				Destination: &fileSize,
+			},
+			&cli.IntFlag{
+				Name:        "loop-count",
+				Value:       1,
+				Usage:       "total testing loop count.",
+				Aliases:     []string{"l"},
+				Destination: &loopCount,
 			},
 			&cli.StringFlag{
 				Name:        "root-dir",
@@ -61,7 +72,7 @@ func NewApp() *cli.App {
 		},
 		Action: func(c *cli.Context) error {
 			fmt.Println("running test ...")
-			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, timeout, mediaDirectory)
+			return RunTest(c, simRead, simWrite, fileSize, sortDirectories, loopCount, mediaDirectory)
 		},
 	}
 	return app
