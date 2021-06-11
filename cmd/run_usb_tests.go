@@ -32,7 +32,7 @@ var (
 	totalFileSize int
 )
 
-func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDirectories bool, loopCount int, mediaDirectory string) error {
+func RunTest(ctx *cli.Context, config *RunTestFlags) error {
 	// lsblkJSON, err := ParseLsblk()
 	// if err != nil {
 	// 	return err
@@ -52,15 +52,15 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 	// 	}
 	// }
 
-	totalFileSize = byteSize * fileSize
+	totalFileSize = byteSize * config.FileSize
 	shaFileName = fmt.Sprintf("%d-SHA256", totalFileSize/byteSize)
 	var shaFiles [][]byte
 
 	// start := time.Now()
 
 	// for time.Since(start).Seconds() < timeout {
-	for i := 0; i < loopCount; i++ {
-		mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
+	for i := 0; i < config.LoopCount; i++ {
+		mountPoints, err := utils.ListDirectories(config.MediaDirectory, config.SortDirectories)
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 		// write to files
 		log.Println("-------------------STAGE 1---------------------")
 		// log.Println("Creating files: ...")
-		writeDuration := writeToMounts(shaFiles, mountPoints, numSimWrite)
+		writeDuration := writeToMounts(shaFiles, mountPoints, config.NumSimWrite)
 
 		// log.Println("Files created.")
 		log.Printf("Time taken to write: %s\n", writeDuration)
@@ -95,7 +95,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 
 		// read from files
 		log.Println("-------------------STAGE 2---------------------")
-		readDuration := readFromMounts(shaFiles, mountPoints, numSimRead)
+		readDuration := readFromMounts(shaFiles, mountPoints, config.NumSimRead)
 		readSpeed := float64(1000000000.0*totalFileSize) / float64(readDuration.Nanoseconds()*MB) * float64(n)
 		log.Printf("Time taken to read: %s\n", readDuration)
 		log.Printf("Read speed: %f MB/s\n", readSpeed)
