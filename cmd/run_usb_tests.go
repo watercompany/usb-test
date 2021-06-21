@@ -16,9 +16,10 @@ import (
 )
 
 type PathError struct {
-	Path  string `json:"path"`
-	Type  string `json:"type"`
-	Error error  `json:"error"`
+	Path       string `json:"path"`
+	Type       string `json:"type"`
+	Error      error  `json:"error"`
+	LoopNumber int    `json:"loop"`
 }
 
 const (
@@ -59,20 +60,20 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 	// start := time.Now()
 
 	// for time.Since(start).Seconds() < timeout {
+	mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
+	if err != nil {
+		return err
+	}
+
+	n := len(mountPoints)
+
+	for i := 0; i < n; i++ {
+		mountPoints[i] = filepath.Join(mountPoints[i], shaFileName)
+		token := make([]byte, totalFileSize)
+		rand.Read(token)
+		shaFiles = append(shaFiles, token)
+	}
 	for i := 0; i < loopCount; i++ {
-		mountPoints, err := utils.ListDirectories(mediaDirectory, sortDirectories)
-		if err != nil {
-			return err
-		}
-
-		n := len(mountPoints)
-
-		for i := 0; i < n; i++ {
-			mountPoints[i] = filepath.Join(mountPoints[i], shaFileName)
-			token := make([]byte, totalFileSize)
-			rand.Read(token)
-			shaFiles = append(shaFiles, token)
-		}
 
 		// delete before running
 		for _, mountPoint := range mountPoints {
@@ -85,7 +86,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 		// write to files
 		log.Println("-------------------STAGE 1---------------------")
 		// log.Println("Creating files: ...")
-		writeDuration := writeToMounts(shaFiles, mountPoints, numSimWrite)
+		writeDuration := writeToMounts(shaFiles, mountPoints, numSimWrite, i)
 
 		// log.Println("Files created.")
 		log.Printf("Time taken to write: %s\n", writeDuration)
@@ -95,7 +96,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 
 		// read from files
 		log.Println("-------------------STAGE 2---------------------")
-		readDuration := readFromMounts(shaFiles, mountPoints, numSimRead)
+		readDuration := readFromMounts(shaFiles, mountPoints, numSimRead, i)
 		readSpeed := float64(1000000000.0*totalFileSize) / float64(readDuration.Nanoseconds()*MB) * float64(n)
 		log.Printf("Time taken to read: %s\n", readDuration)
 		log.Printf("Read speed: %f MB/s\n", readSpeed)
@@ -111,14 +112,14 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 			err = deleteFile(mountPoint)
 			if err != nil {
 				// log.Println("Unable to delete: ", mountPoint)
-				testErrors = append(testErrors, PathError{Path: mountPoint, Error: err, Type: "delete"})
+				testErrors = append(testErrors, PathError{Path: mountPoint, Error: err, Type: "delete", LoopNumber: i})
 			}
 		}
 
 		if len(testErrors) > 0 {
 			log.Printf("-------------------%d Errors---------------------\n", len(testErrors))
 			for _, testError := range testErrors {
-				fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s \n", testError.Path, testError.Type, testError.Error)
+				fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s\tLoopNumber:%d \n", testError.Path, testError.Type, testError.Error, testError.LoopNumber)
 			}
 			log.Println("-----------------------------------------------")
 		}
@@ -135,7 +136,7 @@ func deleteFile(path string) error {
 	return nil
 }
 
-func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *time.Duration {
+func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers, loopNumber int) *time.Duration {
 	// write file to path
 	start := time.Now()
 
@@ -154,13 +155,14 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 
 				createdFilePath, err := utils.CreateFile(writePath, true)
 				if err != nil {
-					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write", LoopNumber: loopNumber})
 					results <- j
 					continue
 				}
 				file, err := os.OpenFile(createdFilePath, os.O_RDWR, 0644)
 				if err != nil {
-					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					file.Close()
+					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write", LoopNumber: loopNumber})
 					results <- j
 					continue
 				}
@@ -168,7 +170,8 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 				// write shaFile to file
 				_, err = file.Write(shaFile)
 				if err != nil {
-					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write"})
+					file.Close()
+					testErrors = append(testErrors, PathError{Path: writePath, Error: err, Type: "write", LoopNumber: loopNumber})
 					results <- j
 					continue
 				}
@@ -192,7 +195,7 @@ func writeToMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *tim
 	return &duration
 }
 
-func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *time.Duration {
+func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers, loopNumber int) *time.Duration {
 	// write file to path
 	start := time.Now()
 
@@ -208,27 +211,29 @@ func readFromMounts(shaFiles [][]byte, mountPoints []string, numWorkers int) *ti
 
 				file, err := os.OpenFile(readPath, os.O_RDWR, 0644)
 				if err != nil {
-					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read", LoopNumber: loopNumber})
 					results <- j
+					file.Close()
 					continue
 				}
 
 				token := make([]byte, totalFileSize)
 				readByteLength, err := file.Read(token)
 				if err != nil {
-					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read", LoopNumber: loopNumber})
 					results <- j
+					file.Close()
 					continue
 				}
 
 				if readByteLength != totalFileSize {
 					err := errors.Errorf("length of file and token not equal: Expected: %d\tFileSize%d\n", totalFileSize, readByteLength)
-					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read", LoopNumber: loopNumber})
 				}
 
 				if !reflect.DeepEqual(token, shaFile) {
 					err := errors.Errorf("file has a different content.")
-					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read"})
+					testErrors = append(testErrors, PathError{Path: readPath, Error: err, Type: "read", LoopNumber: loopNumber})
 				}
 				file.Close()
 				// fmt.Println("worker", id, "finished job", j)
