@@ -83,7 +83,6 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 			}
 		}
 
-		fmt.Printf("\t\t\t\t Loop Number: %d \n", i)
 		// write to files
 		log.Println("-------------------STAGE 1---------------------")
 		// log.Println("Creating files: ...")
@@ -102,6 +101,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 		log.Printf("Read speed: %f MB/s\n", readSpeed)
 
 		log.Println("-------------------Summary---------------------")
+		log.Printf("Loop Number: %d", i)
 		log.Printf("Number of files: %d", n)
 		log.Printf("Size of each file: %f MB", float64(totalFileSize)/MB)
 
