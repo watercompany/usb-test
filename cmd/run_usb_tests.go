@@ -83,6 +83,7 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 			}
 		}
 
+		fmt.Printf("\t\t\t\t Loop Number: %d \n", i)
 		// write to files
 		log.Println("-------------------STAGE 1---------------------")
 		// log.Println("Creating files: ...")
@@ -92,7 +93,6 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 		log.Printf("Time taken to write: %s\n", writeDuration)
 		writeSpeed := float64(1000000000*totalFileSize) / float64(writeDuration.Nanoseconds()*MB) * float64(n)
 		log.Printf("Write speed: %f MB/s\n", writeSpeed)
-		log.Println("-----------------------------------------------")
 
 		// read from files
 		log.Println("-------------------STAGE 2---------------------")
@@ -100,12 +100,10 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 		readSpeed := float64(1000000000.0*totalFileSize) / float64(readDuration.Nanoseconds()*MB) * float64(n)
 		log.Printf("Time taken to read: %s\n", readDuration)
 		log.Printf("Read speed: %f MB/s\n", readSpeed)
-		log.Println("-----------------------------------------------")
 
 		log.Println("-------------------Summary---------------------")
 		log.Printf("Number of files: %d", n)
 		log.Printf("Size of each file: %f MB", float64(totalFileSize)/MB)
-		log.Println("-----------------------------------------------")
 
 		// clean up files
 		for _, mountPoint := range mountPoints {
@@ -121,8 +119,9 @@ func RunTest(ctx *cli.Context, numSimRead, numSimWrite int, fileSize int, sortDi
 			for _, testError := range testErrors {
 				fmt.Printf("Path:%s\tErrorType:%s\tErrorMessage:%s\tLoopNumber:%d \n", testError.Path, testError.Type, testError.Error, testError.LoopNumber)
 			}
-			log.Println("-----------------------------------------------")
+
 		}
+		fmt.Printf("\n\n")
 	}
 
 	return nil
